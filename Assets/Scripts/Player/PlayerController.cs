@@ -1,7 +1,8 @@
-﻿using TMPro;
+using TMPro;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerController : NetworkBehaviour
 {
@@ -10,7 +11,7 @@ public class PlayerController : NetworkBehaviour
     [Header("Name UI")]
     public TMP_Text nameText;
 
-    private MobileJoystick joystick;
+    private Vector2 moveInput;
 
     private NetworkVariable<FixedString32Bytes> playerName =
         new NetworkVariable<FixedString32Bytes>(
@@ -23,13 +24,17 @@ public class PlayerController : NetworkBehaviour
     {
         Debug.Log($"Spawned → Owner:{IsOwner}");
 
+        // PREVENT NON-OWNERS FROM STEALING KEYBOARD/MOUSE DEVICE INPUT
+        PlayerInput pInput = GetComponent<PlayerInput>();
+        if (pInput != null)
+        {
+            pInput.enabled = IsOwner;
+        }
+
         playerName.OnValueChanged += OnNameChanged;
 
         if (IsOwner)
         {
-            // Assign joystick for mobile
-            joystick = FindObjectOfType<MobileJoystick>();
-
             // Set player name
             string myName = PlayerPrefs.GetString("PLAYER_NAME", "Player");
             SubmitNameServerRpc(myName);
@@ -49,23 +54,25 @@ public class PlayerController : NetworkBehaviour
     {
         if (!IsOwner) return;
 
-        Vector3 move = Vector3.zero;
+        // Start with PlayerInput's moveInput
+        Vector2 finalInput = moveInput;
 
-#if UNITY_EDITOR || UNITY_STANDALONE
-        // Keyboard movement for testing
-        float x = Input.GetAxis("Horizontal");
-        float z = Input.GetAxis("Vertical");
-        move = new Vector3(x, 0f, z);
-#else
-        // Mobile joystick movement
-        if (joystick != null)
+        // Try to read from MobileJoystick if it exists in the scene
+        MobileJoystick joystick = Object.FindFirstObjectByType<MobileJoystick>();
+        if (joystick != null && joystick.Direction.sqrMagnitude > 0)
         {
-            Vector2 dir = joystick.Direction;
-            move = new Vector3(dir.x, 0f, dir.y);
+            finalInput = joystick.Direction;
         }
-#endif
 
+        Vector3 move = new Vector3(finalInput.x, 0f, finalInput.y);
         transform.position += move * moveSpeed * Time.deltaTime;
+    }
+
+    // Called automatically by PlayerInput component
+    public void OnMove(InputAction.CallbackContext context)
+    {
+        if (!IsOwner) return;
+        moveInput = context.ReadValue<Vector2>();
     }
 
     [ServerRpc]

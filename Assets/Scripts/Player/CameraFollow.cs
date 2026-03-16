@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class CameraFollow : MonoBehaviour
 {
@@ -36,9 +37,10 @@ public class CameraFollow : MonoBehaviour
         }
 
 #if UNITY_EDITOR || UNITY_STANDALONE
-        if (allowMouseOrbit && Input.GetMouseButton(1))
+        if (allowMouseOrbit && Mouse.current.rightButton.isPressed)
         {
-            yaw += Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+            float mouseX = Mouse.current.delta.ReadValue().x;
+            yaw += mouseX * mouseSensitivity * Time.deltaTime;
         }
         else
         {

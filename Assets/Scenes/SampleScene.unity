@@ -790,8 +790,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c41ef756d8b7f674faef1dc7e83dd80c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraFollow
-  offset: {x: 0, y: 12, z: -8}
-  smoothSpeed: 10
+  distance: 6
+  height: 2.5
+  followSmoothTime: 0.12
+  rotationSmoothTime: 0.08
+  lookHeight: 1.5
+  allowMouseOrbit: 1
+  mouseSensitivity: 120
 --- !u!1 &341291218
 GameObject:
   m_ObjectHideFlags: 0
